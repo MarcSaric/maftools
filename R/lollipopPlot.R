@@ -7,6 +7,7 @@
 #' @param AACol manually specify column name for amino acid changes. Default looks for fields 'HGVSp_Short', 'AAChange' or 'Protein_Change'. Changes can be of any format i.e, can be a numeric value or HGVSp annotations (e.g; p.P459L, p.L2195Pfs*30 or p.Leu2195ProfsTer30)
 #' @param labelPos Amino acid positions to label. If 'all', labels all variants.
 #' @param labPosSize Text size for labels. Default 0.9
+#' @param plotYAxis Plot Y axis or not. Default TRUE
 #' @param showMutationRate Whether to show the somatic mutation rate on the title. Default TRUE
 #' @param showDomainLabel Label domains within the plot. Default TRUE. If `FALSE`` domains are annotated in legend.
 #' @param cBioPortal Adds annotations similar to cBioPortals MutationMapper and collapse Variants into Truncating and rest.
@@ -27,6 +28,7 @@
 #' @param defaultYaxis If FALSE, just labels min and maximum y values on y axis.
 #' @param pointSize size of lollipop heads. Default 1.5
 #' @param titleSize font size for title and subtitle. Default c(1.2, 1)
+#' @param titleLine line for title and subtitle to plot on . Default c(0.8,-0.5)
 #' @param domainBorderCol Default "black". Set to NA to remove.
 #' @param bgBorderCol Default "black". Set to NA to remove.
 #' @return Nothing
@@ -37,10 +39,35 @@
 #'
 #' @export
 
-lollipopPlot = function(maf, gene = NULL, AACol = NULL, labelPos = NULL, labPosSize = 0.9, showMutationRate = TRUE,
-                        showDomainLabel = TRUE, cBioPortal = FALSE, refSeqID = NULL, proteinID = NULL, roundedRect = TRUE,
-                        repel = FALSE, collapsePosLabel = TRUE, showLegend = TRUE, legendTxtSize = 0.8, labPosAngle = 0, domainLabelSize = 0.8, axisTextSize = c(1, 1),
-                        printCount = FALSE, colors = NULL, domainAlpha = 1, domainBorderCol = "black", bgBorderCol = "black", labelOnlyUniqueDoamins = TRUE, defaultYaxis = FALSE, titleSize = c(1.2, 1), pointSize = 1.5){
+lollipopPlot = function(maf,
+                        gene = NULL,
+                        AACol = NULL,
+                        labelPos = NULL,
+                        labPosSize = 0.9,
+                        plotYAxis = TRUE,
+                        showMutationRate = TRUE,
+                        showDomainLabel = TRUE,
+                        cBioPortal = FALSE,
+                        refSeqID = NULL,
+                        proteinID = NULL,
+                        roundedRect = TRUE,
+                        repel = FALSE,
+                        collapsePosLabel = TRUE,
+                        showLegend = TRUE,
+                        legendTxtSize = 0.8,
+                        labPosAngle = 0,
+                        domainLabelSize = 0.8,
+                        axisTextSize = c(1, 1),
+                        printCount = FALSE,
+                        colors = NULL,
+                        domainAlpha = 1,
+                        domainBorderCol = "black",
+                        bgBorderCol = "black",
+                        labelOnlyUniqueDoamins = TRUE,
+                        defaultYaxis = FALSE,
+                        titleSize = c(1.2, 1),
+                        titleLine = c(0.8,-0.5),
+                        pointSize = 1.5){
 
   if(is.null(gene)){
     stop('Please provide a gene name.')
@@ -168,25 +195,25 @@ lollipopPlot = function(maf, gene = NULL, AACol = NULL, labelPos = NULL, labPosS
     prot.dat = prot.dat[!is.na(pos)]
   }
 
-  prot.snp.sumamry = prot.dat[,.N, .(Variant_Classification, conv, pos)]
-  colnames(prot.snp.sumamry)[ncol(prot.snp.sumamry)] = 'count'
-  maxCount = max(prot.snp.sumamry$count, na.rm = TRUE)
+  prot.snp.summary = prot.dat[,.N, .(Variant_Classification, conv, pos)]
+  colnames(prot.snp.summary)[ncol(prot.snp.summary)] = 'count'
+  maxCount = max(prot.snp.summary$count, na.rm = TRUE)
 
-  prot.snp.sumamry = prot.snp.sumamry[order(pos),]
-  #prot.snp.sumamry$distance = c(0,diff(prot.snp.sumamry$pos))
+  prot.snp.summary = prot.snp.summary[order(pos),]
+  #prot.snp.summary$distance = c(0,diff(prot.snp.summary$pos))
 
   if(cBioPortal){
-    prot.snp.sumamry$Variant_Classification = vc.cbio[as.character(prot.snp.sumamry$Variant_Classification)]
+    prot.snp.summary$Variant_Classification = vc.cbio[as.character(prot.snp.summary$Variant_Classification)]
   }
 
   if(maxCount <= 5){
-    prot.snp.sumamry$count2 = 1+prot.snp.sumamry$count
+    prot.snp.summary$count2 = 1+prot.snp.summary$count
     lim.pos = 2:6
     lim.lab = 1:5
   }else{
-    prot.snp.sumamry$count2 = 1+(prot.snp.sumamry$count * (5/max(prot.snp.sumamry$count)))
-    lim.pos = prot.snp.sumamry[!duplicated(count2), count2]
-    lim.lab = prot.snp.sumamry[!duplicated(count2), count]
+    prot.snp.summary$count2 = 1+(prot.snp.summary$count * (5/max(prot.snp.summary$count)))
+    lim.pos = prot.snp.summary[!duplicated(count2), count2]
+    lim.lab = prot.snp.summary[!duplicated(count2), count]
   }
 
   if(length(lim.pos) > 6){
@@ -204,41 +231,36 @@ lollipopPlot = function(maf, gene = NULL, AACol = NULL, labelPos = NULL, labPosS
 
   clusterSize = 10 #Change this later as an argument to user.
   if(repel){
-    prot.snp.sumamry = repelPoints(dat = prot.snp.sumamry, protLen = len, clustSize = clusterSize)
+    prot.snp.summary = repelPoints(dat = prot.snp.summary, protLen = len, clustSize = clusterSize)
   }else{
-    prot.snp.sumamry$pos2 = prot.snp.sumamry$pos
+    prot.snp.summary$pos2 = prot.snp.summary$pos
   }
 
   xlimPos = pretty(0:max(prot$aa.length, na.rm = TRUE))
   xlimPos[length(xlimPos)] = max(prot$aa.length)
 
-  # if(xlimPos[length(xlimPos)] - xlimPos[length(xlimPos)-1] <= 10){
-  #   xlimPos = xlimPos[-(length(xlimPos)-1)]
-  # }
-  #xlimPos[length(xlimPos)] = max(as.numeric(prot$aa.length), na.rm = TRUE)
-
   #-----------------------------------
   #If user asks to label points, use ggrepel to label.
   if(!is.null(labelPos)){
-    prot.snp.sumamry = data.table::data.table(prot.snp.sumamry)
+    prot.snp.summary = data.table::data.table(prot.snp.summary)
 
     if(length(labelPos) == 1){
       if(labelPos != 'all'){
-        prot.snp.sumamry$labThis = ifelse(test = prot.snp.sumamry$pos %in% labelPos, yes = 'yes', no = 'no')
-        labDat = prot.snp.sumamry[labThis %in% 'yes']
+        prot.snp.summary$labThis = ifelse(test = prot.snp.summary$pos %in% labelPos, yes = 'yes', no = 'no')
+        labDat = prot.snp.summary[labThis %in% 'yes']
       }else{
-        labDat = prot.snp.sumamry
+        labDat = prot.snp.summary
       }
     }else{
-      prot.snp.sumamry$labThis = ifelse(test = prot.snp.sumamry$pos %in% labelPos, yes = 'yes', no = 'no')
-      labDat = prot.snp.sumamry[labThis %in% 'yes']
+      prot.snp.summary$labThis = ifelse(test = prot.snp.summary$pos %in% labelPos, yes = 'yes', no = 'no')
+      labDat = prot.snp.summary[labThis %in% 'yes']
     }
 
     if(nrow(labDat) == 0){
       message(paste0("Position ",labelPos, " doesn't seem to be mutated. Here are the mutated foci."))
-      print(prot.snp.sumamry[,.(pos, conv, count, Variant_Classification)][order(pos)])
+      print(prot.snp.summary[,.(pos, conv, count, Variant_Classification)][order(pos)])
       stop()
-      #return(prot.snp.sumamry[,.(mutations = sum(count)), pos][order(mutations, decreasing = TRUE)])
+      #return(prot.snp.summary[,.(mutations = sum(count)), pos][order(mutations, decreasing = TRUE)])
     }
 
 
@@ -275,7 +297,7 @@ lollipopPlot = function(maf, gene = NULL, AACol = NULL, labelPos = NULL, labPosS
   domain_cols = grDevices::adjustcolor(col = domain_cols, alpha.f = domainAlpha)
   names(domain_cols) = domains
 
-  col = col[unique(as.character(prot.snp.sumamry[,Variant_Classification]))]
+  col = col[unique(as.character(prot.snp.summary[,Variant_Classification]))]
 
   if(showLegend){
     lo = matrix(data = c(1, 1, 2, 2), nrow = 2, byrow = TRUE)
@@ -290,12 +312,13 @@ lollipopPlot = function(maf, gene = NULL, AACol = NULL, labelPos = NULL, labPosS
   rect(xleft = 0, ybottom = 0.2, xright = len, ytop = 0.8, col = "#95a5a6", border = bgBorderCol)
   axis(side = 1, at = xlimPos, labels = xlimPos, lwd = 1.2, font = 1,
        cex.axis = axisTextSize[1], line = -0.4)
-  axis(side = 2, at = lim.pos, labels = lim.lab, lwd = 1.2, font = 1, las = 2,
+  if(plotYAxis) {
+      axis(side = 2, at = lim.pos, labels = lim.lab, lwd = 1.2, font = 1, las = 2,
        cex.axis = axisTextSize[2])
-  #mtext(text = "# Mutations", side = 2, line = 1.5, font = 1)
-  segments(x0 = prot.snp.sumamry[,pos2], y0 = 0.8, x1 = prot.snp.sumamry[,pos2], y1 = prot.snp.sumamry[,count2-0.03], lwd = 1.2, col = "gray70")
-  point_cols = col[as.character(prot.snp.sumamry$Variant_Classification)]
-  points(x = prot.snp.sumamry[,pos2], y = prot.snp.sumamry[,count2], col = point_cols, pch = 16, cex = pointSize)
+  }
+  segments(x0 = prot.snp.summary[,pos2], y0 = 0.8, x1 = prot.snp.summary[,pos2], y1 = prot.snp.summary[,count2-0.03], lwd = 1.2, col = "gray70")
+  point_cols = col[as.character(prot.snp.summary$Variant_Classification)]
+  points(x = prot.snp.summary[,pos2], y = prot.snp.summary[,count2], col = point_cols, pch = 16, cex = pointSize)
 
   prot[, domainCol := domain_cols[prot[, Label]]]
   if(roundedRect){
@@ -304,7 +327,6 @@ lollipopPlot = function(maf, gene = NULL, AACol = NULL, labelPos = NULL, labPosS
         berryFunctions::roundedRect(xleft = prot[i,Start], ybottom = 0.1, xright = prot[i,End], ytop = 0.9, col = prot[i, domainCol], border = domainBorderCol, rounding = 0.08)
       }
     }else{
-      #warning("Package berryFunctions needed for roundedRect to work. Please install it and try again.")
       rect(xleft = prot[,Start], ybottom = 0.1, xright = prot[,End], ytop = 0.9, col = prot[,domainCol], border = domainBorderCol)
     }
   }else{
@@ -312,8 +334,16 @@ lollipopPlot = function(maf, gene = NULL, AACol = NULL, labelPos = NULL, labPosS
   }
 
 
-  title(main = cbioSubTitle, adj = 0, font.main = 2, cex.main = titleSize[1], line = 0.8)
-  title(main = unique(prot[,refseq.ID]), adj = 0, font.main = 1, line = -0.5, cex.main = titleSize[2])
+  title(main = cbioSubTitle,
+        adj = 0,
+        font.main = 2,
+        cex.main = titleSize[1],
+        line = titleLine[1])
+  title(main = unique(prot[,refseq.ID]),
+        adj = 0,
+        font.main = 1,
+        cex.main = titleSize[2],
+        line = titleLine[2])
 
   if(showDomainLabel){
     if(labelOnlyUniqueDoamins){
@@ -324,7 +354,6 @@ lollipopPlot = function(maf, gene = NULL, AACol = NULL, labelPos = NULL, labPosS
   }
 
   if(!is.null(labelPos)){
-    #prot.snp.sumamry = repelPoints(dat = prot.snp.sumamry, protLen = len, clustSize = 5)
     text(x = labDat[,pos2], y = labDat[,count2+0.45], labels = labDat[,conv],
          font = 1, srt = labPosAngle, cex = labPosSize, adj = 0.1)
   }
@@ -356,7 +385,6 @@ lollipopPlot = function(maf, gene = NULL, AACol = NULL, labelPos = NULL, labPosS
   }
 
   if(printCount){
-    print(prot.snp.sumamry[,.(pos, conv, count, Variant_Classification)][order(pos)])
-    #print(prot.snp.sumamry[,.(mutations = sum(count)), pos][order(mutations, decreasing = TRUE)])
+    print(prot.snp.summary[,.(pos, conv, count, Variant_Classification)][order(pos)])
   }
 }
