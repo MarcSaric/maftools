@@ -287,7 +287,10 @@ lollipopPlot = function(maf,
   #-----------------------------------
   #Base
   domains = unique(prot[,Label])
-  domain_cols = get_domain_cols()
+  # domain_cols = get_domain_cols()
+  domain_cols = c(RColorBrewer::brewer.pal(8, name = "Accent"),
+                  RColorBrewer::brewer.pal(12, name = "Set3"),
+                  RColorBrewer::brewer.pal(8, name = "Set1"))
 
   if(length(domains) > length(domain_cols)){
     domain_cols = sample(colours(), size = length(domains), replace = FALSE)
