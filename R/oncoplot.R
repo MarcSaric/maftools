@@ -885,7 +885,7 @@ oncoplot = oncoplot = function(maf, top = 20, minMut = NULL, genes = NULL, alter
         temp_anno = as.matrix(annotation)
         #Handle NA's
         print(c(cl, anno_code, col))
-        if(is.na(col)){
+        if(is.null(col) | is.na(col)){
           col = "gray70"
           temp_anno[is.na(temp_anno)] = as.numeric(names(anno_code))
         }
