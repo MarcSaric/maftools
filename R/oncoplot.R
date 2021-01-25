@@ -889,9 +889,9 @@ oncoplot = oncoplot = function(maf, top = 20, minMut = NULL, genes = NULL, alter
             col = "gray70"
             temp_anno[is.na(temp_anno)] = as.numeric(names(anno_code))
           }
+        }
         else {
           print(c("cl: '", cl, "', anno_code: '", anno_code, "', col: '", col, "'"))
-        }
         }
         temp_anno[temp_anno != names(anno_code)] = NA
 
