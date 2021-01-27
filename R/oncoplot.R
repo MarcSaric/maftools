@@ -891,11 +891,15 @@ oncoplot = oncoplot = function(maf, top = 20, minMut = NULL, genes = NULL, alter
           }
         }
         else {
+          print("DEBUG Begin BROKEN")
           print(c("length(clini_lvls):'", length(clini_lvls), "'"))
           print(c("cl: '", cl, "'"))
+          print(c("clnames: '", clnames, "'"))
+          print(c("cl_cols: '", cl_cols, "'"))
           print(c("length(names(cl)): '", length(names(cl)), "'"))
           print(c("anno_code: '", anno_code, "'"))
           print(c("col: '", col, "'"))
+          print("DEBUG En BROKEN")
         }
         temp_anno[temp_anno != names(anno_code)] = NA
 
